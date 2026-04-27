@@ -3,6 +3,7 @@ package edn.stratodonut.drivebywire.client;
 import com.simibubi.create.content.kinetics.mechanicalArm.ArmInteractionPoint.Mode;
 import edn.stratodonut.drivebywire.DriveByWireMod;
 import edn.stratodonut.drivebywire.WireItems;
+import edn.stratodonut.drivebywire.compat.TweakedControllerWireServerHandler;
 import edn.stratodonut.drivebywire.network.WireAddConnectionPacket;
 import edn.stratodonut.drivebywire.network.WireNetworkRequestSyncPacket;
 import edn.stratodonut.drivebywire.network.WireRemoveConnectionPacket;
@@ -17,6 +18,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -199,9 +201,21 @@ public final class ClientWireNetworkHandler {
             ? channelSource.wire$nextChannel(currentChannel, forward)
             : WireNetworkManager.WORLD_CHANNEL;
 
+        if (currentChannel == null) {
+            currentChannel = WireNetworkManager.WORLD_CHANNEL;
+        }
+
         final Player player = Minecraft.getInstance().player;
         if (player != null) {
-            notifyPlayer(player, "Selected Channel: " + currentChannel);
+                // 普通通道：强制从 CHANNEL_TO_LANG_KEY 映射表中查找
+                // 找不到则兜底显示通道原始名称，避免客户端报错
+                String langKey = TweakedControllerWireServerHandler.CHANNEL_TO_LANG_KEY
+                        .getOrDefault(currentChannel,currentChannel);
+                Component displayName = Component.translatable(langKey);
+                player.displayClientMessage(
+                        Component.translatable("drivebywire.wire.channel.selected", displayName),
+                        true
+                );
         }
     }
 
