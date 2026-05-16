@@ -5,7 +5,7 @@
   "mixins": [
     "MixinServerLevel",
     "compat.aeronautics.MixinWheelMountBlockEntity",
-    "compat.MixinBlockSubLevelAssemblyListener",
+    "compat.MixinSubLevelAssemblyHelper",
     "compat.MixinLecternControllerBlock",
     "compat.MixinLecternControllerBlockEntity",
     "compat.MixinLinkedControllerInputPacket",
