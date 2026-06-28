@@ -23,7 +23,7 @@ public abstract class MixinSubLevelAssemblyHelper {
     ) {
         final ServerLevel resultingLevel = transform.getLevel();
         for (final BlockPos oldPos : movedBlocks) {
-            WireNetworkManager.handleAssemblyMove(originLevel, resultingLevel, oldPos, transform.apply(oldPos));
+            WireNetworkManager.handleAssemblyMove(originLevel, resultingLevel, oldPos, transform);
         }
     }
 }
