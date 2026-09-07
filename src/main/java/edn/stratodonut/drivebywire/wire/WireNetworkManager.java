@@ -160,6 +160,11 @@ public final class WireNetworkManager {
         return ConnectionResult.OK;
     }
 
+    public boolean hasWorldSource(final BlockPos source) {
+        final Map<String, Set<WireNetworkSink>> perChannel = sinks.get(source.asLong());
+        return perChannel != null && perChannel.containsKey(WORLD_CHANNEL);
+    }
+
     public boolean containsConnection(
         final BlockPos source,
         final BlockPos sinkPos,
