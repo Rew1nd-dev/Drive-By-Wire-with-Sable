@@ -33,19 +33,25 @@ public final class WireCommonEvents {
             return;
         }
 
+        final WireNetworkManager manager = WireNetworkManager.get(level);
         final BlockPos pos = event.getPos();
-        final BlockState state = level.getBlockState(pos);
-        if (state.isSignalSource()) {
-            final int maxSignal = EnumSet.allOf(Direction.class)
-                .stream()
-                .map(direction -> state.getSignal(level, pos, direction))
-                .max(Comparator.naturalOrder())
-                .orElse(0);
-            WireNetworkManager.trySetSignalAt(level, pos, WireNetworkManager.WORLD_CHANNEL, maxSignal);
+        if (manager.hasWorldSource(pos)) {
+            final BlockState state = level.getBlockState(pos);
+            if (state.isSignalSource()) {
+                final int maxSignal = EnumSet.allOf(Direction.class)
+                    .stream()
+                    .map(direction -> state.getSignal(level, pos, direction))
+                    .max(Comparator.naturalOrder())
+                    .orElse(0);
+                WireNetworkManager.trySetSignalAt(level, pos, WireNetworkManager.WORLD_CHANNEL, maxSignal);
+            }
         }
 
         for (final Direction notifiedSide : event.getNotifiedSides()) {
             final BlockPos neighborPos = pos.relative(notifiedSide);
+            if (!manager.hasWorldSource(neighborPos)) {
+                continue;
+            }
             if (!level.getBlockState(neighborPos).isSignalSource()) {
                 WireNetworkManager.trySetSignalAt(
                     level,
