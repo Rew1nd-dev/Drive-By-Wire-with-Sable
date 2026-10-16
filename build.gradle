@@ -27,6 +27,34 @@ sourceSets.main.resources {
 }
 
 repositories {
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = "RyanHCode Maven"
+                url = "https://maven.ryanhcode.dev/releases"
+            }
+        }
+        filter {
+            includeGroup("dev.ryanhcode.sable")
+            includeGroup("dev.ryanhcode.sable-companion")
+        }
+    }
+    maven {
+        name = "BlameJared Maven"
+        url = "https://maven.blamejared.com"
+        content {
+            includeGroup("foundry.veil")
+            includeGroup("gg.moonflower")
+            includeGroup("io.github.ocelot")
+        }
+    }
+    maven {
+        name = "Fuzss Maven"
+        url = "https://raw.githubusercontent.com/Fuzss/modresources/main/maven/"
+        content {
+            includeGroup("fuzs.forgeconfigapiport")
+        }
+    }
     mavenLocal()
     mavenCentral()
     maven { url = "https://maven.createmod.net" }
@@ -134,14 +162,7 @@ dependencies {
     compileOnly("dev.engine-room.flywheel:flywheel-neoforge-api-${minecraft_version}:${flywheel_version}")
     implementation("dev.engine-room.flywheel:flywheel-neoforge-${minecraft_version}:${flywheel_version}")
     implementation("com.tterrag.registrate:Registrate:${registrate_version}")
-    compileOnly(files(
-        "../sable-neoforge-1.21.1-1.0.6.jar",
-        "../sable-companion-common-1.21.1-1.4.2.jar"
-    ))
-    localRuntime(files(
-        "../sable-neoforge-1.21.1-1.0.6.jar",
-        "../sable-companion-common-1.21.1-1.4.2.jar"
-    ))
+    implementation("dev.ryanhcode.sable:sable-common-${minecraft_version}:${sable_version}")
 
     compileOnly(files("../create-aeronautics-bundled-1.21.1-1.0.3.jar"))
     localRuntime(files("../create-aeronautics-bundled-1.21.1-1.0.3.jar"))

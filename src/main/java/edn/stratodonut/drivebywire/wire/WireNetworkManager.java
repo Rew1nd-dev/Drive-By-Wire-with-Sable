@@ -48,8 +48,6 @@ public final class WireNetworkManager {
     private static final String PLACEMENT_RESOLVED_KEY = "PlacementResolved";
     private static final int RELATIVE_SNAPSHOT_VERSION = 2;
     private static final int OWNER_AWARE_SNAPSHOT_VERSION = 3;
-    private static final int MAX_SOURCES = 64;
-    private static final int MAX_SINKS_PER_SOURCE = 64;
     private static final WorldAttached<WireNetworkManager> CLIENT_MANAGERS = new WorldAttached<>(level -> new WireNetworkManager(() -> {}));
 
     private final Map<Long, Map<String, Set<WireNetworkSink>>> sinks = new HashMap<>();
@@ -139,20 +137,32 @@ public final class WireNetworkManager {
             return ConnectionResult.FAIL_SAME_BLOCK;
         }
 
-        final long sourceKey = source.asLong();
-        if (!sinks.containsKey(sourceKey) && countSourcesInSameDomain(level, source) >= MAX_SOURCES) {
-            return ConnectionResult.FAIL_TOO_MANY_SOURCES;
+        if (containsConnection(source, sinkPos, sinkDirection, channel)) {
+            return ConnectionResult.FAIL_EXISTS;
         }
 
-        final Set<WireNetworkSink> sinksOnChannel = getOrCreateSinksOnChannel(source, channel);
-        if (sinksOnChannel.size() >= MAX_SINKS_PER_SOURCE) {
+        final long sourceKey = source.asLong();
+        if (!sinks.containsKey(sourceKey)) {
+            final SubLevel sourceSubLevel = Sable.HELPER.getContaining(level, source);
+            final UUID sourceSubLevelId = sourceSubLevel == null ? null : sourceSubLevel.getUniqueId();
+            final int maxSources = sourceSubLevel == null
+                ? WireConfig.CONFIG.maxSourcesInWorld.get()
+                : WireConfig.CONFIG.maxSourcesPerStructure.get();
+            if (countSourcesInSameDomain(level, sourceSubLevelId) >= maxSources) {
+                return sourceSubLevel == null
+                    ? ConnectionResult.FAIL_TOO_MANY_WORLD_SOURCES
+                    : ConnectionResult.FAIL_TOO_MANY_SOURCES;
+            }
+        }
+
+        final Set<WireNetworkSink> existingSinks = sinks.getOrDefault(sourceKey, Map.of())
+            .getOrDefault(channel, Set.of());
+        if (existingSinks.size() >= WireConfig.CONFIG.maxSinksPerSource.get()) {
             return ConnectionResult.FAIL_TOO_MANY_SINKS;
         }
 
         final WireNetworkSink sink = WireNetworkSink.of(sinkPos, sinkDirection);
-        if (!sinksOnChannel.add(sink)) {
-            return ConnectionResult.FAIL_EXISTS;
-        }
+        getOrCreateSinksOnChannel(source, channel).add(sink);
 
         addSinkReference(sourceKey, channel, sink);
         dirtyMarker.run();
@@ -786,9 +796,7 @@ public final class WireNetworkManager {
         }
     }
 
-    private int countSourcesInSameDomain(final Level level, final BlockPos source) {
-        final SubLevel sourceSubLevel = Sable.HELPER.getContaining(level, source);
-        final UUID sourceSubLevelId = sourceSubLevel == null ? null : sourceSubLevel.getUniqueId();
+    private int countSourcesInSameDomain(final Level level, final UUID sourceSubLevelId) {
 
         int count = 0;
         for (final long existingSourceKey : sinks.keySet()) {
@@ -857,6 +865,7 @@ public final class WireNetworkManager {
         OK(""),
         FAIL_EXISTS("Connection already exists!"),
         FAIL_TOO_MANY_SOURCES("Exceeded source limit for this structure!"),
+        FAIL_TOO_MANY_WORLD_SOURCES("Exceeded world source limit for this dimension!"),
         FAIL_TOO_MANY_SINKS("Exceeded sink limit for this source!"),
         FAIL_SAME_BLOCK("Source and sink must be different blocks!");
 
